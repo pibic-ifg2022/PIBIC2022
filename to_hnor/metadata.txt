@@ -1,0 +1,47 @@
+# This file contains metadata for your plugin.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=ToHNOR
+qgisMinimumVersion=3.0
+description=Realiza a conversão de altitude geométrica para altitude normal associada ao SGB
+version=1
+author=Engenharia Cartográfica e de Agrimensura - PIBIT 2022 - IFG
+email=joao.paulo@ifg.edu.br
+
+about=Realiza a conversão de altitude geométrica em altitude normal utilizando o modelo para conversão de altitudes hgeoHNOR2020 disponibilizado pelo IBGE
+
+tracker=https://github.com/pibic-ifg2022/PIBIC2022/Bugs
+repository=https://github.com/pibic-ifg2022/PIBIC2022
+# End of mandatory metadata
+
+# Recommended items:
+
+hasProcessingProvider=no
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=topography, project, shapefile
+
+homepage=https://github.com/pibic-ifg2022/PIBIC2022
+category=Plugins
+icon=icon.png
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
+# Since QGIS 3.8, a comma separated list of plugins to be installed
+# (or upgraded) can be specified.
+# Check the documentation for more information.
+# plugin_dependencies=
+
+Category of the plugin: Raster, Vector, Database or Web
+# category=
+
+# If the plugin can run on QGIS Server.
+server=False
+
