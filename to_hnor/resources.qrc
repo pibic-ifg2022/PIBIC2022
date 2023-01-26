@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/plugins/to_HNOR" >
-        <file>icon.png</file>
-    </qresource>
-</RCC>
