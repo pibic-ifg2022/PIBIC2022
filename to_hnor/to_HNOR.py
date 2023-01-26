@@ -23,14 +23,16 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
-
+from qgis.PyQt.QtWidgets import QAction, QFileDialog
+from qgis.core import *
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
 from .to_HNOR_dialog import ToHNORDialog
 import os.path
-
+import processing
+import sys, os
+from osgeo import ogr
 
 class ToHNOR:
     """QGIS Plugin Implementation."""
@@ -179,6 +181,29 @@ class ToHNOR:
                 action)
             self.iface.removeToolBarIcon(action)
 
+    def carregaVetor(self):
+        """Preenche o combox com as layers vetoriais"""
+        self.dlg.cbEntrada.clear()
+        lista_layers = [layer for layer in QgsProject.instance().mapLayers().values()]
+        lista_layers_vetor = []
+        for layer in lista_layers:
+            if layer.type() == QgsMapLayer.VectorLayer:
+                lista_layers_vetor.append(layer.name())
+        self.dlg.cbEntrada.addItems(lista_layers_vetor)
+
+    def abrirVetor(self):
+        """abre a janela de diálogo para abrir uma layer"""
+        camada_abrir = str(QFileDialog.getOpenFileName(caption = "Escolha a camada...",
+                                                        filter="Shapefiles (*.shp)") [0])
+        # se camada_abrir não for vazio
+        if (camada_abrir != ""):
+            self.iface.addVectorLayer(camada_abrir, str.split(os.path.basename(camada_abrir),".") [0], "ogr")
+            self.carregaVetor()
+
+    def atributos(self):
+        layer_selecionado = self.dlg.cbEntrada.currentLayer()
+        if layer_selecionado:
+            self.dlg.cbAltitude.addItems(sorted([i for i in layer_selecionado.uniqueValues(layer_selecionado.fields().lookupField('names'))]))
 
     def run(self):
         """Run method that performs all the real work"""
@@ -191,6 +216,12 @@ class ToHNOR:
 
         # show the dialog
         self.dlg.show()
+        
+        # Adicionando as funções criadas
+        self.carregaVetor()
+        self.dlg.tbEntrada.clicked.connect(self.abrirVetor)
+        self.atributos()
+
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
