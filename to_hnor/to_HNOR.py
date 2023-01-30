@@ -24,7 +24,11 @@
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog
+from PyQt5.QtWidgets import QComboBox
 from qgis.core import *
+from qgis.core import QgsVectorLayer, QgsProject
+from qgis.core import QgsField
+from qgis.utils import iface
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
@@ -32,6 +36,9 @@ from .to_HNOR_dialog import ToHNORDialog
 import os.path
 import processing
 import sys, os
+import PyQt5
+import qgsmaplayercombobox
+
 from osgeo import ogr
 
 class ToHNOR:
@@ -172,7 +179,6 @@ class ToHNOR:
         # will be set False in run()
         self.first_start = True
 
-
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
@@ -184,13 +190,13 @@ class ToHNOR:
     def carregaVetor(self):
         """Preenche o combox com as layers vetoriais"""
         self.dlg.cbEntrada.clear()
-        lista_layers = [layer for layer in QgsProject.instance().mapLayers().values()]
-        lista_layers_vetor = []
-        for layer in lista_layers:
-            if layer.type() == QgsMapLayer.VectorLayer:
-                lista_layers_vetor.append(layer.name())
-        self.dlg.cbEntrada.addItems(lista_layers_vetor)
-
+        self.dlg.cbAltitude.clear()
+        layers = [layer for layer in QgsProject.instance().mapLayers().values()]
+        layer_list = []
+        for layer in layers:
+            layer_list.append(layer.name())
+        self.dlg.cbEntrada.addItems(layer_list)
+        
     def abrirVetor(self):
         """abre a janela de diálogo para abrir uma layer"""
         camada_abrir = str(QFileDialog.getOpenFileName(caption = "Escolha a camada...",
@@ -200,11 +206,52 @@ class ToHNOR:
             self.iface.addVectorLayer(camada_abrir, str.split(os.path.basename(camada_abrir),".") [0], "ogr")
             self.carregaVetor()
 
-    def atributos(self):
-        layer_selecionado = self.dlg.cbEntrada.currentLayer()
-        if layer_selecionado:
-            self.dlg.cbAltitude.addItems(sorted([i for i in layer_selecionado.uniqueValues(layer_selecionado.fields().lookupField('names'))]))
+    def abrirGrade(self):
+        """abre a janela de diálogo para abrir o arquivo de grade"""
+        camada_grade = str(QFileDialog.getOpenFileName(caption = "Escolha a camada...",
+                                                        filter="Arquivo de texto (*.txt)") [0])
+        # se camada_grade não for vazio
+        if (camada_grade != ""):
+            basefolder = camada_grade
+            epsg_code = 4674
+            xField, yField = 'x','y'
+            delimiter = ' '
+            type = 'csv'
+            uri = "file:///{}?delimiter='{}'&type={}&xField={}&yField={}&crs=epsg:{}".format(basefolder, delimiter, type, xField, yField, epsg_code)
 
+#fonte
+#file:///D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/hgeoHNOR2020__grades-IMBITUBA/hgeoHNOR2020__IMBITUBA__fator-conversao.txt?type=csv&delimiter=%20&maxFields=10000&detectTypes=yes&xField=x&yField=y&crs=EPSG:4674&spatialIndex=no&subsetIndex=no&watchFile=no
+
+          #  uri = str(camada_grade)("?delimiter=%s&xField=%s&yField=%s") % (" ", "x", "y")
+            layer = QgsVectorLayer(uri, "Grade", "delimitedtext")
+            QgsProject.instance().addMapLayer(layer)
+            self.dlg.leGrade.setText(basefolder)
+
+
+    def salvarSaida(self):
+        """Seleciona o diretório de saida"""
+        camada_salvar = str(QFileDialog.getSaveFileName(caption = "Escolha a camada de saída",
+                                                        filter="Shapefiles (*.shp)") [0])
+        self.dlg.leSaida.setText(camada_salvar)
+        return camada_salvar
+
+    def update_combobox2(self):
+        self.dlg.cbAltitude.clear()
+        selectedLayerText = self.dlg.cbEntrada.currentText()
+        selectedLayer = QgsProject.instance().mapLayersByName(str(selectedLayerText))[0]
+        fields = [field.name() for field in selectedLayer.fields()]
+        if selectedLayer:
+            self.dlg.cbAltitude.addItems(fields)
+            return selectedLayer
+
+    def variaveis(self):
+        """define as variáveis para a função run"""
+        camadaEntradaText = self.dlg.cbEntrada.currentText()
+        self.camadaEntrada = QgsProject.instance().mapLayersByName(str(camadaEntradaText))[0]
+        self.camadaSaida = self.camada_salvar
+        self.limitesEntrada = self.camadaEntrada.extent()
+
+        
     def run(self):
         """Run method that performs all the real work"""
 
@@ -216,14 +263,19 @@ class ToHNOR:
 
         # show the dialog
         self.dlg.show()
+     
         
         # Adicionando as funções criadas
         self.carregaVetor()
-        self.dlg.tbEntrada.clicked.connect(self.abrirVetor)
-        self.atributos()
+        self.dlg.tbEntrada.clicked.connect(self.abrirVetor) 
+#        self.dlg.cbEntrada.currentIndexChanged.connect(self.update_combobox2)
+        self.dlg.cbEntrada.activated.connect(self.update_combobox2)
+        self.dlg.tbSaida.clicked.connect(self.salvarSaida)
+        self.dlg.tbGrade.clicked.connect(self.abrirGrade)
 
         # Run the dialog event loop
         result = self.dlg.exec_()
+
         # See if OK was pressed
         if result:
             # Do something useful here - delete the line containing pass and
