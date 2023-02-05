@@ -28,6 +28,7 @@ from PyQt5.QtWidgets import QComboBox
 from qgis.core import *
 from qgis.core import QgsVectorLayer, QgsProject
 from qgis.core import QgsField
+from qgis.core import QgsFeatureRequest
 from qgis.utils import iface
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -38,8 +39,10 @@ import processing
 import sys, os
 import PyQt5
 import qgsmaplayercombobox
+import qgis.analysis
 
 from osgeo import ogr
+from qgis.analysis import QgsInterpolator
 
 class ToHNOR:
     """QGIS Plugin Implementation."""
@@ -212,20 +215,27 @@ class ToHNOR:
                                                         filter="Arquivo de texto (*.txt)") [0])
         # se camada_grade não for vazio
         if (camada_grade != ""):
-            basefolder = camada_grade
-            epsg_code = 4674
+            self.basefolder = camada_grade
+            self.epsg_code = 4674
             xField, yField = 'x','y'
             delimiter = ' '
             type = 'csv'
-            uri = "file:///{}?delimiter='{}'&type={}&xField={}&yField={}&crs=epsg:{}".format(basefolder, delimiter, type, xField, yField, epsg_code)
-
-#fonte
-#file:///D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/hgeoHNOR2020__grades-IMBITUBA/hgeoHNOR2020__IMBITUBA__fator-conversao.txt?type=csv&delimiter=%20&maxFields=10000&detectTypes=yes&xField=x&yField=y&crs=EPSG:4674&spatialIndex=no&subsetIndex=no&watchFile=no
-
-          #  uri = str(camada_grade)("?delimiter=%s&xField=%s&yField=%s") % (" ", "x", "y")
+            uri = "file:///{}?delimiter='{}'&type={}&xField={}&yField={}&crs=epsg:{}".format(self.basefolder, delimiter, type, xField, yField, self.epsg_code)
             layer = QgsVectorLayer(uri, "Grade", "delimitedtext")
             QgsProject.instance().addMapLayer(layer)
-            self.dlg.leGrade.setText(basefolder)
+            self.dlg.leGrade.setText(self.basefolder)
+
+    def abrirGrade2(self):
+        """abre a janela de diálogo para abrir o arquivo de grade"""
+        camada_grade = "D:\GitHUB_Repositorios\PIBIC2022\to_hnor\grades\grade.sdat"
+        # se camada_grade não for vazio
+        if (camada_grade != ""):
+            self.basefolder = camada_grade
+            self.epsg_code = 4674
+            uri = "file:///{}?crs=epsg:{}".format(self.basefolder,self.epsg_code)        
+            layer = QgsVectorLayer(uri, "Grade", "ogr")
+            QgsProject.instance().addMapLayer(layer)
+            self.dlg.leGrade.setText(self.basefolder)
 
 
     def salvarSaida(self):
@@ -248,7 +258,7 @@ class ToHNOR:
         """define as variáveis para a função run"""
         camadaEntradaText = self.dlg.cbEntrada.currentText()
         self.camadaEntrada = QgsProject.instance().mapLayersByName(str(camadaEntradaText))[0]
-        self.camadaSaida = self.camada_salvar
+        self.camadaSaida = self.salvarSaida()
         self.limitesEntrada = self.camadaEntrada.extent()
 
         
@@ -269,9 +279,10 @@ class ToHNOR:
         self.carregaVetor()
         self.dlg.tbEntrada.clicked.connect(self.abrirVetor) 
 #        self.dlg.cbEntrada.currentIndexChanged.connect(self.update_combobox2)
+        self.dlg.leGrade.clear()
         self.dlg.cbEntrada.activated.connect(self.update_combobox2)
-        self.dlg.tbSaida.clicked.connect(self.salvarSaida)
-        self.dlg.tbGrade.clicked.connect(self.abrirGrade)
+   #     self.dlg.tbSaida.clicked.connect(self.salvarSaida)
+        self.dlg.tbGrade.clicked.connect(self.abrirGrade2)
 
         # Run the dialog event loop
         result = self.dlg.exec_()
@@ -280,4 +291,10 @@ class ToHNOR:
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
+            self.variaveis()
+            #saga:addrastervaluestofeatures(self.camadaEntrada,'D://GitHUB_Repositorios//PIBIC2022//to_hnor//interpoladp//tps.sdat',self.camadaSaida,2)
+            processing.run("saga:addrastervaluestofeatures", {'SHAPES':self.camadaEntrada,'GRIDS':['D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/tps.sdat'],'RESULT':self.camadaSaida,'RESAMPLING':2})
+            #interpolator = QgsInterpolator(self.camadaEntrada,'ALTGEOM2','IDW')
+            #result, feedback = interpolator.interpolate(self.camada_grade, feedback=none)
+            #result.saveAsLayer('Interpolacao.shp')
             pass
