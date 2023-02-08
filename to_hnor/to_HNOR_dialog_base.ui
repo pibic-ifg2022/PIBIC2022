@@ -88,6 +88,16 @@
     </rect>
    </property>
   </widget>
+  <widget class="QLineEdit" name="leSaida">
+   <property name="geometry">
+    <rect>
+     <x>120</x>
+     <y>110</y>
+     <width>113</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>

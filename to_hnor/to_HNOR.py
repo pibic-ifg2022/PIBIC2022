@@ -22,6 +22,7 @@
  ***************************************************************************/
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
+from qgis.PyQt.QtCore import QVariant
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog
 from PyQt5.QtWidgets import QComboBox
@@ -222,7 +223,7 @@ class ToHNOR:
         """Seleciona o diretório de saida"""
         camada_salvar = str(QFileDialog.getSaveFileName(caption = "Escolha a camada de saída",
                                                         filter="Shapefiles (*.shp)") [0])
-       # self.dlg.leSaida.setText(camada_salvar)
+        self.dlg.leSaida.setText(camada_salvar)
         return camada_salvar
         
     def variaveis(self):
@@ -230,7 +231,9 @@ class ToHNOR:
         camadaEntradaText = self.dlg.cbEntrada.currentText()
         self.camadaEntrada = QgsProject.instance().mapLayersByName(str(camadaEntradaText))[0]
         self.camadaSaida = self.salvarSaida()
+ #       camadaSaidaIndex = self.camadaSaidaText.fields().indexFromName(str.split(os.path.basename(self.camada_salvar)))
         self.limitesEntrada = self.camadaEntrada.extent()
+        self.atributo_altitude = self.camadaEntrada.fields().indexFromName(str(self.dlg.cbAltitude.currentText()))
         
     def run(self):
         """Run method that performs all the real work"""
@@ -257,4 +260,21 @@ class ToHNOR:
         if result:
             self.variaveis()
             processing.run("saga:addrastervaluestofeatures", {'SHAPES':self.camadaEntrada,'GRIDS':['D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/tps.sdat'],'RESULT':self.camadaSaida,'RESAMPLING':2})
+            nome_camada_saida = str.split(os.path.basename(self.camadaSaida),".") [0]
+            self.iface.addVectorLayer(self.camadaSaida, nome_camada_saida , "ogr")
+            self.carregaVetor()
+            layer = QgsProject.instance().mapLayersByName(nome_camada_saida)[0]
+            provider = layer.dataProvider()
+            provider.addAttributes([QgsField("H_normal",QVariant.Double)])
+            self.altitude_normal_index = layer.fields().indexFromName("H_normal")
+            self.fator_conversao = layer.fields().indexFromName("tps")
+            layer.updateFields()
+
+            for feature in layer.getFeatures():
+                self.atributo_altitude_valor = feature.attributes()[self.atributo_altitude]
+                self.fator_conversao_valor = feature.attributes()[self.fator_conversao]
+                self.altitude_normal = self.atributo_altitude_valor - self.fator_conversao_valor
+                layer.changeAttributeValue(feature.id(),self.altitude_normal_index, self.fator_conversao_valor)
+                layer.updateFeature(feature)
+                layer.commitChanges()
             pass
