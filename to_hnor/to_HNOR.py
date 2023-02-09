@@ -31,12 +31,14 @@ from qgis.core import QgsVectorLayer, QgsProject
 from qgis.core import QgsField
 from qgis.core import QgsFeatureRequest
 from qgis.utils import iface
+
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
 from .to_HNOR_dialog import ToHNORDialog
 import os.path
 import processing
+import requests
 import sys, os
 import PyQt5
 import qgsmaplayercombobox
@@ -259,6 +261,12 @@ class ToHNOR:
         # See if OK was pressed
         if result:
             self.variaveis()
+            url = '/vsicurl/http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/tps.sdat'
+      #      r = requests.get(url)
+       #     with open('tps.sdat', 'wb') as f:
+        #        f.write(r.content)
+            grade = QgsRasterLayer(url,'grade')
+            QgsProject.instance().addMapLayer(grade)
             processing.run("saga:addrastervaluestofeatures", {'SHAPES':self.camadaEntrada,'GRIDS':['D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/tps.sdat'],'RESULT':self.camadaSaida,'RESAMPLING':2})
             nome_camada_saida = str.split(os.path.basename(self.camadaSaida),".") [0]
             self.iface.addVectorLayer(self.camadaSaida, nome_camada_saida , "ogr")
