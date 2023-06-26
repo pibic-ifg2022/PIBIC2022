@@ -1,0 +1,13 @@
+<PAMDataset>
+  <SRS dataAxisToSRSAxisMapping="1,2">GEOGCS["SIRGAS 2000",DATUM["Sistema_de_Referencia_Geocentrico_para_las_AmericaS_2000",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6674"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433],AXIS["Longitude",EAST],AXIS["Latitude",NORTH]]</SRS>
+  <PAMRasterBand band="1">
+    <Metadata>
+      <MDI key="STATISTICS_APPROXIMATE">YES</MDI>
+      <MDI key="STATISTICS_MAXIMUM">268.43704223633</MDI>
+      <MDI key="STATISTICS_MEAN">0.090264628187643</MDI>
+      <MDI key="STATISTICS_MINIMUM">-536.4541015625</MDI>
+      <MDI key="STATISTICS_STDDEV">6.8603676943812</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">8.856</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

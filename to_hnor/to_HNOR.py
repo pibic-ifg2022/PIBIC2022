@@ -31,6 +31,8 @@ from qgis.core import QgsVectorLayer, QgsProject
 from qgis.core import QgsField
 from qgis.core import QgsFeatureRequest
 from qgis.utils import iface
+from qgis.PyQt.QtCore import Qt
+
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -219,6 +221,7 @@ class ToHNOR:
         fields = [field.name() for field in selectedLayer.fields()]
         if selectedLayer:
             self.dlg.cbAltitude.addItems(fields)
+            self.dlg.cbSigma_h.addItems(fields)
             return selectedLayer
             
     def salvarSaida(self):
@@ -236,7 +239,8 @@ class ToHNOR:
  #       camadaSaidaIndex = self.camadaSaidaText.fields().indexFromName(str.split(os.path.basename(self.camada_salvar)))
         self.limitesEntrada = self.camadaEntrada.extent()
         self.atributo_altitude = self.camadaEntrada.fields().indexFromName(str(self.dlg.cbAltitude.currentText()))
-        
+        self.atributo_precisao = self.camadaEntrada.fields().indexFromName(str(self.dlg.cbSigma_h.currentText()))
+                  
     def run(self):
         """Run method that performs all the real work"""
 
@@ -248,41 +252,75 @@ class ToHNOR:
 
         # show the dialog
         self.dlg.show()
-     
-        
+         
         # Adicionando as funções criadas
         self.carregaVetor()
+     #   self.atributo_precisao = 'Nulo'
         self.dlg.tbEntrada.clicked.connect(self.abrirVetor) 
         self.dlg.cbEntrada.activated.connect(self.update_combobox2)
-
+        # Habilitar ou desabilitar o cbSigma_h dependendo do cbPrecisao
+        self.dlg.cbPrecisao.setChecked(False)  # Desmarcar inicialmente
+      #  self.dlg.cbPrecisao.stateChanged.connect(lambda state: self.dlg.cbSigma_h.setEnabled(state == Qt.Checked))
+        self.dlg.cbPrecisao.stateChanged.connect(lambda state: self.dlg.cbSigma_h.setEnabled(state == Qt.Checked))
+      
+    #    self.dlg.cbPrecisao.stateChanged.connect(lambda state: (setattr(self, 'checkbox_selected', state == Qt.Checked),
+     #                                        self.dlg.cbSigma_h.setEnabled(state == Qt.Checked)))
         # Run the dialog event loop
         result = self.dlg.exec_()
 
         # See if OK was pressed
         if result:
             self.variaveis()
+            
+            #Buscar Grade do Fator de Conversão
             url = '/vsicurl/http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/tps.sdat'
-      #      r = requests.get(url)
-       #     with open('tps.sdat', 'wb') as f:
-        #        f.write(r.content)
             grade = QgsRasterLayer(url,'grade')
-            QgsProject.instance().addMapLayer(grade)
-            processing.run("saga:addrastervaluestofeatures", {'SHAPES':self.camadaEntrada,'GRIDS':['D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/tps.sdat'],'RESULT':self.camadaSaida,'RESAMPLING':2})
+            params1 = {
+                'SHAPES': self.camadaEntrada,
+                'GRIDS': ['D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/tps.sdat','D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/incerteza3.sdat'],
+                'RESULT':self.camadaSaida,
+                'RESAMPLING': 2
+            }
+            
+            #QgsProject.instance().addMapLayer(grade)
+            processing.run("saga:addrastervaluestofeatures", params1)
+#            processing.run("saga:addrastervaluestofeatures", {'SHAPES':self.camadaEntrada,'GRIDS':['D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/incerteza3.sdat'],'RESULT':self.camadaSaida,'RESAMPLING':2})
             nome_camada_saida = str.split(os.path.basename(self.camadaSaida),".") [0]
             self.iface.addVectorLayer(self.camadaSaida, nome_camada_saida , "ogr")
             self.carregaVetor()
+
+
+
+
             layer = QgsProject.instance().mapLayersByName(nome_camada_saida)[0]
             provider = layer.dataProvider()
-            provider.addAttributes([QgsField("H_normal",QVariant.Double)])
-            self.altitude_normal_index = layer.fields().indexFromName("H_normal")
-            self.fator_conversao = layer.fields().indexFromName("tps")
+            provider.addAttributes([QgsField("Hnormal",QVariant.Double)])
+            provider.addAttributes([QgsField("HN_Inc",QVariant.Double)])
             layer.updateFields()
+            self.altitude_normal_index = layer.fields().indexFromName('Hnormal')
+            self.incerteza_index = layer.fields().indexFromName('HN_Inc')
+            self.fator_conversao = layer.fields().indexFromName('tps')
+            self.incerteza = layer.fields().indexFromName('incerteza3')
 
+            layer.startEditing()
             for feature in layer.getFeatures():
-                self.atributo_altitude_valor = feature.attributes()[self.atributo_altitude]
-                self.fator_conversao_valor = feature.attributes()[self.fator_conversao]
-                self.altitude_normal = self.atributo_altitude_valor - self.fator_conversao_valor
-                layer.changeAttributeValue(feature.id(),self.altitude_normal_index, self.fator_conversao_valor)
-                layer.updateFeature(feature)
-                layer.commitChanges()
-            pass
+                #Cálculo da Altitude Normal
+                self.fator_conversao_valor = feature[self.fator_conversao]
+                self.altitude_geom_valor = feature[self.atributo_altitude]
+                self.altitude_normal = self.altitude_geom_valor - self.fator_conversao_valor
+                feature[self.altitude_normal_index]=self.altitude_normal
+                layer.changeAttributeValue(feature.id(),self.altitude_normal_index, self.altitude_normal)
+
+                #Cálculo da Incerteza
+                self.incerteza_valor = feature[self.incerteza]
+                self.incerteza_altitude_geom_valor = feature[self.atributo_precisao]
+                
+                
+                #VERIFICAR SE VALOR É NULO
+                self.incerteza_altitude_normal = (self.incerteza_altitude_geom_valor**2 + self.incerteza_valor**2)**(1)
+                feature[self.incerteza_index]=self.incerteza_altitude_normal
+                layer.changeAttributeValue(feature.id(),self.incerteza_index, self.incerteza_altitude_normal)
+
+            layer.updateFields()
+            layer.commitChanges()
+    pass

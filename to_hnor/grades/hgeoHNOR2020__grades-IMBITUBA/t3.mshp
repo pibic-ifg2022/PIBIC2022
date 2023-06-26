@@ -35,6 +35,8 @@
       <FIELD TYPE="STRING">NOTA</FIELD>
       <FIELD TYPE="DOUBLE">ALTGEOM2</FIELD>
       <FIELD TYPE="DOUBLE">tps</FIELD>
+      <FIELD TYPE="DOUBLE">H_normal</FIELD>
+      <FIELD TYPE="DOUBLE">incerteza3</FIELD>
     </FIELDS>
   </DATABASE>
   <SOURCE></SOURCE>
@@ -42,14 +44,25 @@
     <TOOL library="shapes_grid" id="1" name="Add Grid Values to Shapes">
       <OPTION type="choice" id="RESAMPLING" name="Resampling" index="2">Bicubic Spline Interpolation</OPTION>
       <INPUT type="shapes" id="SHAPES" name="Shapes">
-        <FILE>C:\Users\magna\Downloads\VM_APP_BDG (1)\VM_APP_BDGPoint.shp</FILE>
+        <TOOL library="shapes_grid" id="1" name="Add Grid Values to Shapes">
+          <OPTION type="choice" id="RESAMPLING" name="Resampling" index="2">Bicubic Spline Interpolation</OPTION>
+          <INPUT type="shapes" id="SHAPES" name="Shapes">
+            <FILE>C:\Users\magna\Downloads\VM_APP_BDG (1)\VM_APP_BDGPoint.shp</FILE>
+          </INPUT>
+          <INPUT_LIST type="grid_list" id="GRIDS" name="Grids">
+            <INPUT type="grid_list" id="GRIDS" name="Grids">
+              <FILE>D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/tps.sgrd</FILE>
+            </INPUT>
+          </INPUT_LIST>
+          <OUTPUT type="shapes" id="RESULT" name="Result">VM_APP_BDGPoint</OUTPUT>
+        </TOOL>
       </INPUT>
       <INPUT_LIST type="grid_list" id="GRIDS" name="Grids">
         <INPUT type="grid_list" id="GRIDS" name="Grids">
-          <FILE>D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/tps.sgrd</FILE>
+          <FILE>D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/incerteza3.sgrd</FILE>
         </INPUT>
       </INPUT_LIST>
-      <OUTPUT type="shapes" id="RESULT" name="Result">VM_APP_BDGPoint</OUTPUT>
+      <OUTPUT type="shapes" id="RESULT" name="Result">t1</OUTPUT>
     </TOOL>
   </HISTORY>
   <FILE></FILE>
