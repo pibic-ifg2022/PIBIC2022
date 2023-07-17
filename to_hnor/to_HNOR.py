@@ -324,7 +324,6 @@ class ToHNOR:
                 # Call the function to download the image
                 response = requests.get(grade_url)
                 if response.status_code == 200:
-                    with open(save_path_grade, 'wb') as file:
                         file.write(response.content)
     
                 response = requests.get(grade_url2)
