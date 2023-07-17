@@ -311,10 +311,10 @@ class ToHNOR:
             else:
                 #Buscar Grade do Fator de Conversão
                 
-                grade_url = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/tps.sdat"
-                save_path_grade = 'C:/temp/tps.sdat'
-                grade_url2 = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/tps.sgrd"
-                save_path_grade2 = 'C:/temp/tps.sgrd'
+                grade_url = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/FC.sdat"
+                save_path_grade = 'C:/temp/FC.sdat'
+                grade_url2 = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/FC.sgrd"
+                save_path_grade2 = 'C:/temp/FC.sgrd'
     
                 incerteza_url = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/incerteza3.sdat"
                 save_path_incerteza = 'C:/temp/incerteza3.sdat'
@@ -345,7 +345,7 @@ class ToHNOR:
                 params1 = {
                     'SHAPES': self.camadaEntrada,
                 #   'GRIDS': ['D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/tps.sdat','D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/incerteza3.sdat'],
-                    'GRIDS': ['C:/temp/tps.sdat','C:/temp/incerteza3.sdat'],
+                    'GRIDS': ['C:/temp/FC.sdat','C:/temp/incerteza3.sdat'],
                     'RESULT':self.camadaSaida,
                     'RESAMPLING': 2
                 }
@@ -360,11 +360,11 @@ class ToHNOR:
                 layer = QgsProject.instance().mapLayersByName(nome_camada_saida)[0]
                 provider = layer.dataProvider()
                 provider.addAttributes([QgsField("Hnormal",QVariant.Double)])
-                provider.addAttributes([QgsField("HN_Inc",QVariant.Double)])
+                provider.addAttributes([QgsField("Sigma_HN",QVariant.Double)])
                 layer.updateFields()
                 self.altitude_normal_index = layer.fields().indexFromName('Hnormal')
-                self.incerteza_index = layer.fields().indexFromName('HN_Inc')
-                self.fator_conversao = layer.fields().indexFromName('tps')
+                self.incerteza_index = layer.fields().indexFromName('Sigma_HN')
+                self.fator_conversao = layer.fields().indexFromName('FC')
                 self.incerteza = layer.fields().indexFromName('incerteza3')
     
                 layer.startEditing()
