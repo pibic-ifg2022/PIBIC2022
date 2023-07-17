@@ -296,13 +296,7 @@ class ToHNOR:
                     tipo_atributo_altitude = "nofloat"
  
             features = self.camadaEntrada.getFeatures() 
-            for feature in features:
-                try:
-                    float(feature[self.atributo_precisao])
-                    tipo_atributo_precisao = "float"
-                except ValueError:
-                    tipo_atributo_precisao = "nofloat"
-            
+
             if tipo_atributo_altitude == "nofloat":
                 print("O atributo selecionado não é do tipo float(double)")
                 iface.messageBar().pushMessage("Erro", f"O atributo {self.atributo_altitude} não é do tipo float.", level=Qgis.Critical)
@@ -316,10 +310,10 @@ class ToHNOR:
                 grade_url2 = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/FC.sgrd"
                 save_path_grade2 = 'C:/temp/FC.sgrd'
     
-                incerteza_url = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/incerteza3.sdat"
-                save_path_incerteza = 'C:/temp/incerteza3.sdat'
-                incerteza_url2 = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/incerteza3.sgrd"
-                save_path_incerteza2 = 'C:/temp/incerteza3.sgrd'
+                incerteza_url = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/Incerteza.sdat"
+                save_path_incerteza = 'C:/temp/Incerteza.sdat'
+                incerteza_url2 = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/Incerteza.sgrd"
+                save_path_incerteza2 = 'C:/temp/Incerteza.sgrd'
     
                 # Call the function to download the image
                 response = requests.get(grade_url)
@@ -345,7 +339,7 @@ class ToHNOR:
                 params1 = {
                     'SHAPES': self.camadaEntrada,
                 #   'GRIDS': ['D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/tps.sdat','D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/incerteza3.sdat'],
-                    'GRIDS': ['C:/temp/FC.sdat','C:/temp/incerteza3.sdat'],
+                    'GRIDS': ['C:/temp/FC.sdat','C:/temp/Incerteza.sdat'],
                     'RESULT':self.camadaSaida,
                     'RESAMPLING': 2
                 }
@@ -360,12 +354,12 @@ class ToHNOR:
                 layer = QgsProject.instance().mapLayersByName(nome_camada_saida)[0]
                 provider = layer.dataProvider()
                 provider.addAttributes([QgsField("Hnormal",QVariant.Double)])
-                provider.addAttributes([QgsField("HN_Inc",QVariant.Double)])
+                provider.addAttributes([QgsField("Incerteza_HN",QVariant.Double)])
                 layer.updateFields()
                 self.altitude_normal_index = layer.fields().indexFromName('Hnormal')
-                self.incerteza_index = layer.fields().indexFromName('HN_Inc')
+                self.incerteza_index = layer.fields().indexFromName('Incerteza_HN')
                 self.fator_conversao = layer.fields().indexFromName('FC')
-                self.incerteza = layer.fields().indexFromName('incerteza3')
+                self.incerteza = layer.fields().indexFromName('Incerteza')
     
                 layer.startEditing()
                 for feature in layer.getFeatures():
