@@ -239,14 +239,7 @@ class ToHNOR:
         camada_salvar = str(QFileDialog.getSaveFileName(caption = "Escolha a camada de saída",
                                                         filter="Shapefiles (*.shp)") [0])
         return camada_salvar
-
-    def isfloat(num):
-        try:
-            float(num)
-            return True
-        except ValueError:
-            return False
-
+        
     def variaveis(self):
         """define as variáveis para a função run"""
         camadaEntradaText = self.dlg.cbEntrada.currentText()
@@ -285,115 +278,99 @@ class ToHNOR:
         if result:
               
             self.variaveis()
-            
-            #verificar se os atributos de entrada são do tipo float
-            features = self.camadaEntrada.getFeatures() 
-            for feature in features:
-                try:
-                    float(feature[self.atributo_altitude])
-                    tipo_atributo_altitude = "float"
-                except ValueError:
-                    tipo_atributo_altitude = "nofloat"
- 
-            features = self.camadaEntrada.getFeatures() 
-            for feature in features:
-                try:
-                    float(feature[self.atributo_precisao])
-                    tipo_atributo_precisao = "float"
-                except ValueError:
-                    tipo_atributo_precisao = "nofloat"
-            
-            if tipo_atributo_altitude == "nofloat":
-                print("O atributo selecionado não é do tipo float(double)")
-                iface.messageBar().pushMessage("Erro", f"O atributo {self.atributo_altitude} não é do tipo float.", level=Qgis.Critical)
-               # exit()
+            print(self.camadaEntrada.fields().at(self.atributo_altitude).type())
 
-            else:
-                #Buscar Grade do Fator de Conversão
-                
-                grade_url = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/tps.sdat"
-                save_path_grade = 'C:/temp/tps.sdat'
-                grade_url2 = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/tps.sgrd"
-                save_path_grade2 = 'C:/temp/tps.sgrd'
-    
-                incerteza_url = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/incerteza3.sdat"
-                save_path_incerteza = 'C:/temp/incerteza3.sdat'
-                incerteza_url2 = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/incerteza3.sgrd"
-                save_path_incerteza2 = 'C:/temp/incerteza3.sgrd'
-    
-                # Call the function to download the image
-                response = requests.get(grade_url)
-                if response.status_code == 200:
-                    with open(save_path_grade, 'wb') as file:
-                        file.write(response.content)
-    
-                response = requests.get(grade_url2)
-                if response.status_code == 200:
-                    with open(save_path_grade2, 'wb') as file:
-                        file.write(response.content)
-    
-                response = requests.get(incerteza_url)
-                if response.status_code == 200:
-                    with open(save_path_incerteza, 'wb') as file:
-                        file.write(response.content)
-    
-                response = requests.get(incerteza_url2)
-                if response.status_code == 200:
-                    with open(save_path_incerteza2, 'wb') as file:
-                        file.write(response.content)
-    
-                params1 = {
-                    'SHAPES': self.camadaEntrada,
-                #   'GRIDS': ['D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/tps.sdat','D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/incerteza3.sdat'],
-                    'GRIDS': ['C:/temp/tps.sdat','C:/temp/incerteza3.sdat'],
-                    'RESULT':self.camadaSaida,
-                    'RESAMPLING': 2
-                }
-                
-                print(params1)
-                #QgsProject.instance().addMapLayer(grade)
-                processing.run("saga:addrastervaluestofeatures", params1)
-                nome_camada_saida = str.split(os.path.basename(self.camadaSaida),".") [0]
-                self.iface.addVectorLayer(self.camadaSaida, nome_camada_saida , "ogr")
-                self.carregaVetor()
-    
-                layer = QgsProject.instance().mapLayersByName(nome_camada_saida)[0]
-                provider = layer.dataProvider()
-                provider.addAttributes([QgsField("Hnormal",QVariant.Double)])
-                provider.addAttributes([QgsField("HN_Inc",QVariant.Double)])
-                layer.updateFields()
-                self.altitude_normal_index = layer.fields().indexFromName('Hnormal')
-                self.incerteza_index = layer.fields().indexFromName('HN_Inc')
-                self.fator_conversao = layer.fields().indexFromName('tps')
-                self.incerteza = layer.fields().indexFromName('incerteza3')
-    
-                layer.startEditing()
-                for feature in layer.getFeatures():
-                    #Cálculo da Altitude Normal
-                    self.fator_conversao_valor = feature[self.fator_conversao]
-                    self.altitude_geom_valor = feature[self.atributo_altitude]
-                    self.altitude_normal = self.altitude_geom_valor - self.fator_conversao_valor
-                    feature[self.altitude_normal_index]=self.altitude_normal
-                    layer.changeAttributeValue(feature.id(),self.altitude_normal_index, self.altitude_normal)
-    
-                    #Cálculo da Incerteza
-                    if self.dlg.cbPrecisao.isChecked():
-                        self.incerteza_valor = feature[self.incerteza]
-                        self.incerteza_altitude_geom_valor = feature[self.atributo_precisao]         
-                        if self.incerteza_altitude_geom_valor:
-                            self.incerteza_altitude_normal = (self.incerteza_altitude_geom_valor**2 + self.incerteza_valor**2)**(0.5)
-                        else:
-                            self.incerteza_altitude_normal = self.incerteza_valor
-                    else:
-                        self.incerteza_valor = feature[self.incerteza]
-                        self.incerteza_altitude_geom_valor = 0.0                
-                        self.incerteza_altitude_normal = self.incerteza_valor  
-    
-                    
-                    feature[self.incerteza_index]=self.incerteza_altitude_normal
-                    layer.changeAttributeValue(feature.id(),self.incerteza_index, self.incerteza_altitude_normal)
-    
-                layer.updateFields()
-                layer.commitChanges()
+#            if type(self.atributo_altitude) is double :
+ #               print("O atributo é do tipo double.")
+  #              print(self.camadaEntrada.type)
+   
+#   else:
+ #               print("O atributo não é do tipo double.")
+  #              print(self.camadaEntrada.type)                
+            #Buscar Grade do Fator de Conversão
             
+            grade_url = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/tps.sdat"
+            save_path_grade = 'C:/temp/tps.sdat'
+            grade_url2 = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/tps.sgrd"
+            save_path_grade2 = 'C:/temp/tps.sgrd'
+
+            incerteza_url = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/incerteza3.sdat"
+            save_path_incerteza = 'C:/temp/incerteza3.sdat'
+            incerteza_url2 = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/incerteza3.sgrd"
+            save_path_incerteza2 = 'C:/temp/incerteza3.sgrd'
+
+            # Call the function to download the image
+            response = requests.get(grade_url)
+            if response.status_code == 200:
+                with open(save_path_grade, 'wb') as file:
+                    file.write(response.content)
+
+            response = requests.get(grade_url2)
+            if response.status_code == 200:
+                with open(save_path_grade2, 'wb') as file:
+                    file.write(response.content)
+
+            response = requests.get(incerteza_url)
+            if response.status_code == 200:
+                with open(save_path_incerteza, 'wb') as file:
+                    file.write(response.content)
+
+            response = requests.get(incerteza_url2)
+            if response.status_code == 200:
+                with open(save_path_incerteza2, 'wb') as file:
+                    file.write(response.content)
+   
+            params1 = {
+                'SHAPES': self.camadaEntrada,
+             #   'GRIDS': ['D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/tps.sdat','D:/GitHUB_Repositorios/PIBIC2022/to_hnor/grades/incerteza3.sdat'],
+                'GRIDS': ['C:/temp/tps.sdat','C:/temp/incerteza3.sdat'],
+                'RESULT':self.camadaSaida,
+                'RESAMPLING': 2
+            }
+            
+            print(params1)
+            #QgsProject.instance().addMapLayer(grade)
+            processing.run("saga:addrastervaluestofeatures", params1)
+            nome_camada_saida = str.split(os.path.basename(self.camadaSaida),".") [0]
+            self.iface.addVectorLayer(self.camadaSaida, nome_camada_saida , "ogr")
+            self.carregaVetor()
+
+            layer = QgsProject.instance().mapLayersByName(nome_camada_saida)[0]
+            provider = layer.dataProvider()
+            provider.addAttributes([QgsField("Hnormal",QVariant.Double)])
+            provider.addAttributes([QgsField("HN_Inc",QVariant.Double)])
+            layer.updateFields()
+            self.altitude_normal_index = layer.fields().indexFromName('Hnormal')
+            self.incerteza_index = layer.fields().indexFromName('HN_Inc')
+            self.fator_conversao = layer.fields().indexFromName('tps')
+            self.incerteza = layer.fields().indexFromName('incerteza3')
+
+            layer.startEditing()
+            for feature in layer.getFeatures():
+                #Cálculo da Altitude Normal
+                self.fator_conversao_valor = feature[self.fator_conversao]
+                self.altitude_geom_valor = feature[self.atributo_altitude]
+                self.altitude_normal = self.altitude_geom_valor - self.fator_conversao_valor
+                feature[self.altitude_normal_index]=self.altitude_normal
+                layer.changeAttributeValue(feature.id(),self.altitude_normal_index, self.altitude_normal)
+
+                #Cálculo da Incerteza
+                if self.dlg.cbPrecisao.isChecked():
+                    self.incerteza_valor = feature[self.incerteza]
+                    self.incerteza_altitude_geom_valor = feature[self.atributo_precisao]         
+                    if self.incerteza_altitude_geom_valor:
+                        self.incerteza_altitude_normal = (self.incerteza_altitude_geom_valor**2 + self.incerteza_valor**2)**(0.5)
+                    else:
+                        self.incerteza_altitude_normal = self.incerteza_valor
+                else:
+                    self.incerteza_valor = feature[self.incerteza]
+                    self.incerteza_altitude_geom_valor = 0.0                
+                    self.incerteza_altitude_normal = self.incerteza_valor  
+
+                
+                feature[self.incerteza_index]=self.incerteza_altitude_normal
+                layer.changeAttributeValue(feature.id(),self.incerteza_index, self.incerteza_altitude_normal)
+
+            layer.updateFields()
+            layer.commitChanges()
     pass
