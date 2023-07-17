@@ -324,6 +324,7 @@ class ToHNOR:
                 # Call the function to download the image
                 response = requests.get(grade_url)
                 if response.status_code == 200:
+                    with open(save_path_grade, 'wb') as file:
                         file.write(response.content)
     
                 response = requests.get(grade_url2)
@@ -359,10 +360,10 @@ class ToHNOR:
                 layer = QgsProject.instance().mapLayersByName(nome_camada_saida)[0]
                 provider = layer.dataProvider()
                 provider.addAttributes([QgsField("Hnormal",QVariant.Double)])
-                provider.addAttributes([QgsField("Sigma_HN",QVariant.Double)])
+                provider.addAttributes([QgsField("HN_Inc",QVariant.Double)])
                 layer.updateFields()
                 self.altitude_normal_index = layer.fields().indexFromName('Hnormal')
-                self.incerteza_index = layer.fields().indexFromName('Sigma_HN')
+                self.incerteza_index = layer.fields().indexFromName('HN_Inc')
                 self.fator_conversao = layer.fields().indexFromName('FC')
                 self.incerteza = layer.fields().indexFromName('incerteza3')
     
