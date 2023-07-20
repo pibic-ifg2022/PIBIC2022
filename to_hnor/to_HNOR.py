@@ -314,7 +314,7 @@ class ToHNOR:
                 save_path_incerteza = 'C:/temp/Incerteza.sdat'
                 incerteza_url2 = "http://github.com/pibic-ifg2022/PIBIC2022/raw/main/to_hnor/grades/Incerteza.sgrd"
                 save_path_incerteza2 = 'C:/temp/Incerteza.sgrd'
-    
+     
                 # Call the function to download the image
                 response = requests.get(grade_url)
                 if response.status_code == 200:
@@ -354,10 +354,10 @@ class ToHNOR:
                 layer = QgsProject.instance().mapLayersByName(nome_camada_saida)[0]
                 provider = layer.dataProvider()
                 provider.addAttributes([QgsField("Hnormal",QVariant.Double)])
-                provider.addAttributes([QgsField("Incerteza_HN",QVariant.Double)])
+                provider.addAttributes([QgsField("sigma_HN",QVariant.Double)])
                 layer.updateFields()
                 self.altitude_normal_index = layer.fields().indexFromName('Hnormal')
-                self.incerteza_index = layer.fields().indexFromName('Incerteza_HN')
+                self.incerteza_index = layer.fields().indexFromName('sigma_HN')
                 self.fator_conversao = layer.fields().indexFromName('FC')
                 self.incerteza = layer.fields().indexFromName('Incerteza')
     
