@@ -12,7 +12,7 @@ email=joao.paulo@ifg.edu.br
 
 about=Realiza a conversão de altitudes geométricas para altitudes normais associadas ao SGB utilizando o hgeoHNOR2020
 
-tracker=https://github.com/pibic-ifg2022/PIBIC2022/Bugs
+tracker=https://github.com/pibic-ifg2022/PIBIC2022/tree/main/Bugs
 repository=https://github.com/pibic-ifg2022/PIBIC2022
 # End of mandatory metadata
 
