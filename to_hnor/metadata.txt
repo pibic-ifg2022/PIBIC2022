@@ -14,6 +14,7 @@ about=Realiza a conversão de altitudes geométricas para altitudes normais asso
 
 tracker=https://github.com/pibic-ifg2022/PIBIC2022/tree/main/Bugs
 repository=https://github.com/pibic-ifg2022/PIBIC2022
+issues=https://github.com/pibic-ifg2022/PIBIC2022/issues
 # End of mandatory metadata
 
 # Recommended items:
